@@ -1,5 +1,6 @@
 #!/bin/env python3
 
+from http import client
 import paramiko
 from secrets import choice
 import yaml
@@ -9,7 +10,7 @@ import sys
 
 
 def random(N=64):
-    ''.join([choice(string.ascii_lowercase +
+    return ''.join([choice(string.ascii_lowercase +
                     string.ascii_uppercase + string.digits) for _ in range(N)])
 
 
