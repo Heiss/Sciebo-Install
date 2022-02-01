@@ -34,11 +34,19 @@ else:
         values_file = "{}/values.yaml".format(os.getcwd())
 
 values = None
-with open(values_file, "r") as f:
-    try:
-        values = yaml.safe_load(f)
-    except yaml.YAMLError as exc:
-        print(f"Error in values.yaml: {exc}")
+try:
+    with open(values_file, "r") as f:
+        try:
+            values = yaml.safe_load(f)
+        except yaml.YAMLError as exc:
+            print(f"Error in values.yaml: {exc}")
+            exit(1)
+except OSError as exc:
+    value = input(
+        f"Missing file: {values_file}\nDo you want to create a new one? [Y/n]: ")
+    if value == "" or value == "yes" or value == "y":
+        values = {"global": {"domains": []}}
+    else:
         exit(1)
 
 if "global" not in values:
