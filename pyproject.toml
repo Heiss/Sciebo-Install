@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "sciebo-install"
+version = "0.1.0"
+description = "Script for install sciebo RDS in sciebo"
+authors = ["Peter Heiss <peter.heiss@uni-muenster.de>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "sciebo_install"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+paramiko = "^2.9.2"
+PyYAML = "^6.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

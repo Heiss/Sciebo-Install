@@ -1,0 +1,8 @@
+rds: "sciebords-dev2.uni-muenster.de"
+owncloud_path: "/var/www/owncloud" # optional, can be set, if occ is not available in lookup paths, will be used for all entries in sciebo
+sciebo:
+    - address: "localhost:8080"
+      # user: "admin" # optional, if no user / password or private_key was set, ssh agent will be used. Password will be used if needed for agent.
+      # password: "secret" # optional, will be used to decode private_key if private_key is set, otherwise for username
+      # private_key: "$HOME/.ssh/id_rsa" # optional, full path, only $HOME available from envVars
+      # owncloud_path: "/var/www/owncloud" # optional, can be set, if occ is not available in lookup paths, only used for this entry
