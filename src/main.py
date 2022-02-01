@@ -26,7 +26,8 @@ values_file = None
 if len(sys.argv) == 2:
     values_file = sys.argv[1]
 else:
-    value = input("Sciebo RDS config file needed.\nvalues.yaml [./values.yaml]: ")
+    value = input(
+        "Sciebo RDS config file needed.\nvalues.yaml [./values.yaml]: ")
     if value != "":
         values_file = value
     else:
@@ -94,7 +95,7 @@ for val in config["sciebo"]:
     # via overwrites from config
     for overwrite in execute(ssh, f'{owncloud_path}occ config:list | grep "overwritehost\|overwrite.cli.url"').readlines():
         # remove comma, because we look at php dict parts
-        overwrite = overwrite.replace(",", "")
+        overwrite = overwrite.replace(",", "", 1)
         # separate key and value
         _, _, val = str(overwrite).partition(":")
         owncloud_url = val
