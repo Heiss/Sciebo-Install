@@ -1,8 +1,14 @@
-rds: "sciebords-dev2.uni-muenster.de"
-owncloud_path: "/var/www/owncloud" # optional, can be set, if occ is not available in lookup paths, will be used for all entries in sciebo
-sciebo:
-    - address: "localhost:8080"
+rds: "https://sciebords-dev2.uni-muenster.de" # mandatory, will be used to set the redirect-url
+# owncloud_path: "/var/www/owncloud" # optional, have to be set, if occ is not available in lookup paths, will be used for all entries in sciebo
+# k8snamespace: "sns-staging" # optional, if you want to use another namespace as configured in kubectl current context
+# k8scontext: "sciebo-ng" # optional, if you want to use another kubectl context
+# oauthname: "sciebo-rds" # optional, can be used to change the oauth client name in owncloud, default: sciebo-rds
+servers:
+    - address: "localhost:8080" # mandatory, if you want to use ssh
       # user: "admin" # optional, if no user / password or private_key was set, ssh agent will be used. Password will be used if needed for agent.
       # password: "secret" # optional, will be used to decode private_key if private_key is set, otherwise for username
       # private_key: "$HOME/.ssh/id_rsa" # optional, full path, only $HOME available from envVars
       # owncloud_path: "/var/www/owncloud" # optional, can be set, if occ is not available in lookup paths, only used for this entry
+    - selector: app.kubernetes.io/instance=sns-staging-owncloud # mandatory, selector have to be unique for the wanted pod
+      # namespace: sns-staging # mandatory, if you want to use another namespace as configured in kubectl current context and different as the global one
+      # k8scontext: "sciebo-ng" # optional, if you want to use another kubectl context as the global one

@@ -129,18 +129,18 @@ for val in config["servers"]:
                                owncloud_host_hostname_command, owncloud_host_config_command)
 
         ssh.close()
-    elif "namespace" in val and "podname" in val:
+    elif "selector" in val:
         kubernetes.config.load_kube_config(
             context=val.get("k8scontext", config.get("k8scontext")))
+        namespace = val.get("namespace", config.get("k8snamespace"), kubernetes.config.list_kube_config_contexts()[1]['context']['namespace'])
         api = kubernetes.client.CoreV1Api()
 
-        pods = api.list_namespaced_pod(
-            namespace=val['namespace'], label_selector=val["selector"], field_selector="status.phase=Running")
+        pods = api.list_namespaced_pod(namespace=namespace, label_selector=val["selector"], field_selector="status.phase=Running")
 
         k8s = None
-        for pod in pods:
+        for pod in pods.items:
             k8s = kubernetes.stream.stream(api.connect_get_namespaced_pod_exec(
-                val["podname"], val['namespace'], command='/bin/bash', stderr=True, stdin=True, stdout=True, tty=True))
+                pod.metadata.name, pod.metadata.namespace, command='/bin/bash', stderr=True, stdin=True, stdout=True, tty=True))
 
             if k8s.is_open():
                 continue
