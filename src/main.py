@@ -14,6 +14,19 @@ def random(N=64):
                            string.ascii_uppercase + string.digits) for _ in range(N)])
 
 
+def get_commands():
+    commands = [
+        '{owncloud_path}occ market:install oauth2',
+        '{owncloud_path}occ market:install rds',
+        '{owncloud_path}occ app:enable oauth2',
+        '{owncloud_path}occ app:enable rds',
+        '{owncloud_path}occ oauth2:add-client {oauthname} {client_id} {client_secret} {rds_domain}',
+        '{owncloud_path}occ rds:set-oauthname {oauthname}',
+        '{owncloud_path}occ rds:set-url {rds_domain}'
+    ]
+    
+    return commands
+
 def execute_ssh(ssh, cmd):
     _, stdout, stderr = ssh.exec_command(cmd)
     err = stderr.read()
@@ -51,7 +64,50 @@ def execute(channel, fun, commands, owncloud_host_hostname_command, owncloud_hos
 
 
 values_file = None
-if len(sys.argv) == 2:
+arguments = sys.argv
+force_kubectl = False
+
+
+if "--help" in arguments:
+    print("""Usage: main.py values.yaml [--help|--only-kubeconfig|--commands]
+
+--help: This dialog.
+--only-kubeconfig: Ignore servers object in config.yaml and use the user kubeconfig for a single pod configuration.
+--commands: Shows all commands, which will be executed to configure the owncloud instances properly.""")
+    exit(1)
+
+if "--only-kubeconfig" in arguments:
+    force_kubectl = True
+    arguments.remove("--only-kubeconfig")
+
+if "--commands" in arguments:
+    data = {
+        "client_id": "{$CLIENT_ID}",
+        "client_secret": "{$CLIENT_SECRET}",
+        "oauthname": "{$OAUTHNAME}",
+        "rds_domain": "{$RDS_DOMAIN}",
+        "owncloud_path": "{$OWNCLOUD_PATH}"
+    }
+
+    print("""Conditions:
+$CLIENT_ID and $CLIENT_SECRET has a length of 64.
+$OWNCLOUD_PATH is empty "" (occ can be found through $PATH) or set to a folder with trailing slash / e.g. /var/www/owncloud/
+$OAUTHNAME is not already in use for oauth2.
+$RDS_DOMAIN points to the sciebo-rds installation root domain.
+
+Remember that you also need the domainname of the owncloud instance to configure the values.yaml.
+""")
+
+    print("Commands: ")
+    for cmd in get_commands():
+        print(cmd.format(**data))
+    exit(0)
+
+if len(arguments) > 2:
+    print("Error in parameters. Use --help for help.")
+    exit(1)
+
+if len(arguments) == 2:
     values_file = sys.argv[1]
 else:
     value = input(
@@ -93,10 +149,21 @@ with open("config.yaml", "r") as f:
 
 owncloud_path_global = config.get("owncloud_path", "")
 
+if force_kubectl:
+    try:
+        config["servers"] = [{
+            "selector": config["k8sselector"]
+        }]
+    except KeyError as exc:
+        print("Missing `k8sselector` field in config. --only-kubeconfig needs this field.")
+        exit(1)
+    print("use kubeconfig only")
+
+
 for val in config["servers"]:
     key_filename = val.get("private_key")
     if key_filename is not None:
-        key_filename = key_filename.replace("$HOME", os.environ["HOME"])
+        key_filename = key_filename.replace("{$HOME}", os.environ["HOME"])
 
     client_id, client_secret = (random(), random())
     oauthname = config.get("oauthname", "sciebo-rds")
@@ -106,15 +173,15 @@ for val in config["servers"]:
     if owncloud_path != "" and not str(owncloud_path).endswith("/"):
         owncloud_path += "/"
 
-    commands = [
-        f'{owncloud_path}occ market:install oauth2',
-        f'{owncloud_path}occ market:install rds',
-        f'{owncloud_path}occ app:enable oauth2',
-        f'{owncloud_path}occ app:enable rds',
-        f'{owncloud_path}occ oauth2:add-client {oauthname} {client_id} {client_secret} {rds_domain}',
-        f'{owncloud_path}occ rds:set-oauthname {oauthname}',
-        f'{owncloud_path}occ rds:set-url {rds_domain}'
-    ]
+    data = {
+        "client_id": client_id,
+        "client_secret": client_secret, 
+        "oauthname": oauthname, 
+        "rds_domain": rds_domain, 
+        "owncloud_pat": owncloud_path
+    }
+    commands = [cmd.format(**data) for cmd in get_commands()]
+
     owncloud_host_hostname_command = 'php -r "echo gethostname();"'
     owncloud_host_config_command = f'{owncloud_path}occ config:list | grep "overwritehost\|overwrite.cli.url"'
 
@@ -130,17 +197,28 @@ for val in config["servers"]:
 
         ssh.close()
     elif "selector" in val:
-        kubernetes.config.load_kube_config(
-            context=val.get("k8scontext", config.get("k8scontext")))
-        namespace = val.get("namespace", config.get("k8snamespace"), kubernetes.config.list_kube_config_contexts()[1]['context']['namespace'])
+        context = val.get("context", config.get("k8scontext"))
+        selector = val.get("selector", config.get("k8sselector"))
+        containername = val.get(
+            "containername", config.get("k8scontainername"))
+        kubernetes.config.load_kube_config(context=context)
+        namespace = val.get("namespace", config.get(
+            "k8snamespace", kubernetes.config.list_kube_config_contexts()[1]['context']['namespace']))
         api = kubernetes.client.CoreV1Api()
 
-        pods = api.list_namespaced_pod(namespace=namespace, label_selector=val["selector"], field_selector="status.phase=Running")
+        pods = api.list_namespaced_pod(
+            namespace=namespace, label_selector=selector, field_selector="status.phase=Running")
 
         k8s = None
         for pod in pods.items:
-            k8s = kubernetes.stream.stream(api.connect_get_namespaced_pod_exec(
-                pod.metadata.name, pod.metadata.namespace, command='/bin/bash', stderr=True, stdin=True, stdout=True, tty=True))
+            k8s = kubernetes.stream.stream(
+                api.connect_get_namespaced_pod_exec,
+                pod.metadata.name,
+                namespace,
+                container=containername,
+                command='/bin/bash',
+                stderr=True, stdin=True, stdout=True, tty=False, _preload_content=False
+            )
 
             if k8s.is_open():
                 continue
@@ -149,7 +227,8 @@ for val in config["servers"]:
             print(f"No connection via kubectl possible: {val}")
             exit(1)
 
-        print(f"kubectl init: {k8s}")
+        print(
+            f"kubectl initialized: Connected to pod {pod.metadata.name}, container {containername} in namespace {namespace}")
 
         owncloud_url = execute(k8s, execute_kubectl, commands,
                                owncloud_host_hostname_command, owncloud_host_config_command)
@@ -157,7 +236,7 @@ for val in config["servers"]:
         k8s.close()
     else:
         print(
-            f"Skipped: Server was not valid to work with: {val}\nIt needs to be an object with `address` for ssh or `namespace` and `podname` for kubectl")
+            f"Skipped: Server was not valid to work with: {val}\nIt needs to be an object with `address` for ssh or `namespace` for kubectl")
         continue
 
     if not owncloud_url:
@@ -184,3 +263,5 @@ for val in config["servers"]:
 
 with open(values_file, 'w') as yaml_file:
     yaml.dump(values, yaml_file, default_flow_style=False)
+
+exit(0)
