@@ -24,8 +24,9 @@ def get_commands():
         '{owncloud_path}occ rds:set-oauthname {oauthname}',
         '{owncloud_path}occ rds:set-url {rds_domain}'
     ]
-    
+
     return commands
+
 
 def execute_ssh(ssh, cmd):
     _, stdout, stderr = ssh.exec_command(cmd)
@@ -64,16 +65,19 @@ def execute(channel, fun, commands, owncloud_host_hostname_command, owncloud_hos
 
 
 values_file = None
+config_file = None
 arguments = sys.argv
 force_kubectl = False
 
 
 if "--help" in arguments:
-    print("""Usage: main.py values.yaml [--help|--only-kubeconfig|--commands]
+    print("""Usage: main.py values.yaml [--help|--only-kubeconfig|--commands|--config /path/to/your/config.yaml|--defaults]
 
 --help: This dialog.
 --only-kubeconfig: Ignore servers object in config.yaml and use the user kubeconfig for a single pod configuration.
---commands: Shows all commands, which will be executed to configure the owncloud instances properly.""")
+--commands: Shows all commands, which will be executed to configure the owncloud instances properly.
+--config: The given path will be used as config.yaml file.
+--defaults: Use values.yaml and / or config.yaml if present.""")
     exit(1)
 
 if "--only-kubeconfig" in arguments:
@@ -82,26 +86,46 @@ if "--only-kubeconfig" in arguments:
 
 if "--commands" in arguments:
     data = {
-        "client_id": "{$CLIENT_ID}",
-        "client_secret": "{$CLIENT_SECRET}",
-        "oauthname": "{$OAUTHNAME}",
-        "rds_domain": "{$RDS_DOMAIN}",
-        "owncloud_path": "{$OWNCLOUD_PATH}"
+        "client_id": "${CLIENT_ID}",
+        "client_secret": "${CLIENT_SECRET}",
+        "oauthname": "${OAUTHNAME}",
+        "rds_domain": "${RDS_DOMAIN}",
+        "owncloud_path": "${OWNCLOUD_PATH}"
     }
 
     print("""Conditions:
-$CLIENT_ID and $CLIENT_SECRET has a length of 64.
+$CLIENT_ID and $CLIENT_SECRET has a length of 64 characters (no special character like [/\.,] allowed).
 $OWNCLOUD_PATH is empty "" (occ can be found through $PATH) or set to a folder with trailing slash / e.g. /var/www/owncloud/
-$OAUTHNAME is not already in use for oauth2.
+$OAUTHNAME is not in use for oauth2 already.
 $RDS_DOMAIN points to the sciebo-rds installation root domain.
 
-Remember that you also need the domainname of the owncloud instance to configure the values.yaml.
+Remember that you also need the domainname of the owncloud instance to configure the values.yaml, which will be automatically guessed by this script.
 """)
 
     print("Commands: ")
     for cmd in get_commands():
         print(cmd.format(**data))
     exit(0)
+
+defaults = False
+if "--defaults" in arguments:
+    defaults = True
+    arguments.remove("--defaults")
+## TODO add defaults to stop annoying prints
+try:
+    index = arguments.index("--config")
+    file = arguments[index+1]
+    if str(file).startswith("--"):
+        print("Error in given config.yaml: Not a valid path")
+        exit(1)
+    if "/" in file:
+        config_file = file
+    else:
+        config_file = "{}/{}".format(os.getcwd(), file)
+    del arguments[index+1]
+    arguments.remove("--config")
+except ValueError as exc:
+    config_file = "{}/config.yaml".format(os.getcwd())
 
 if len(arguments) > 2:
     print("Error in parameters. Use --help for help.")
@@ -140,12 +164,21 @@ if "domains" not in values["global"]:
     values["global"]["domains"] = []
 
 config = None
-with open("config.yaml", "r") as f:
-    try:
-        config = yaml.safe_load(f)
-    except yaml.YAMLError as exc:
-        print(f"Error in config.yaml: {exc}")
+try:
+    with open(config_file, "r") as f:
+        try:
+            config = yaml.safe_load(f)
+        except yaml.YAMLError as exc:
+            print(f"Error in config.yaml: {exc}")
+            exit(1)
+except OSError as exc:
+    value = input(
+        f"Missing file: {config_file}\nYou can use `--config config.yaml` to specify config.yaml\nDo you want to use the given values.yaml? [Y/n]: ")
+    if value == "" or value == "yes" or value == "y":
+        config = values
+    else:
         exit(1)
+
 
 owncloud_path_global = config.get("owncloud_path", "")
 
@@ -159,8 +192,13 @@ if force_kubectl:
         exit(1)
     print("use kubeconfig only")
 
+servers = config.get("servers", [])
 
-for val in config["servers"]:
+if len(servers) == 0:
+    print("No servers were found.")
+    exit(1)
+
+for val in servers:
     key_filename = val.get("private_key")
     if key_filename is not None:
         key_filename = key_filename.replace("{$HOME}", os.environ["HOME"])
@@ -175,10 +213,10 @@ for val in config["servers"]:
 
     data = {
         "client_id": client_id,
-        "client_secret": client_secret, 
-        "oauthname": oauthname, 
-        "rds_domain": rds_domain, 
-        "owncloud_pat": owncloud_path
+        "client_secret": client_secret,
+        "oauthname": oauthname,
+        "rds_domain": rds_domain,
+        "owncloud_path": owncloud_path
     }
     commands = [cmd.format(**data) for cmd in get_commands()]
 
