@@ -12,7 +12,7 @@ chmod +x src/main.py
 src/main.py --help
 ```
 
-The application will look for a config.yaml. But you can also set your config into the used values.yaml, so you only have to maintain a single yaml file. Just append the content of config.yaml to your values.yaml. For options, please take a look into the config.yaml.example, because it holds everything with documentation you can configure for this app.
+The application will look for a `config.yaml`. But you can also set your config stuff for this tool into the sciebo RDS needed `values.yaml`, so you only have to maintain a single yaml file. Just append the content of `config.yaml` to your `values.yaml`. For options, please take a look into the `config.yaml.example`, because it holds everything with documentation you can configure for this app. Also you should take a look into the help parameter, because it shows, what the tool can do for you.
 
 ## Developer installation
 
@@ -27,7 +27,7 @@ poetry install
 After this you can run the application in this environment.
 
 ```bash
-poetry run python src/main.py
+poetry run python src/main.py --help
 ```
 
 If you add or update the dependencies, you have to generate a new requirementst.txt for easier user installations.
