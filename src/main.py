@@ -1,5 +1,6 @@
 #!/bin/env python3
 
+from click import argument
 import paramiko
 import kubernetes
 from secrets import choice
@@ -45,6 +46,12 @@ def execute_kubectl(k8s, cmd):
         exit(1)
     return k8s.read_stdout(timeout=3)
 
+def execute_helm():
+    os.system("helm uninstall sciebo-rds")
+    os.system("helm repo remove sciebo-rds")
+    os.system("helm repo add sciebo-rds https://www.research-data-services.org/charts")
+    os.system(f"helm upgrade -i sciebo-rds sciebo-rds --values {values_file}")
+
 
 def execute(channel, fun, commands, owncloud_host_hostname_command, owncloud_host_config_command):
     for cmd in commands:
@@ -68,6 +75,7 @@ values_file = None
 config_file = None
 arguments = sys.argv
 force_kubectl = False
+helm_install = False
 
 
 if "--help" in arguments:
@@ -77,6 +85,7 @@ if "--help" in arguments:
 --only-kubeconfig: Ignore servers object in config.yaml and use the user kubeconfig for a single pod configuration.
 --commands: Shows all commands, which will be executed to configure the owncloud instances properly.
 --config: The given path will be used as config.yaml file.
+--helm-install: Needs helm installed. Runs all needed helm commands to install sciebo-rds in your current kubectl context after configuration. Helm upgrades should not use this parameter. Please use `helm upgrade` for this.
 --defaults: Use values.yaml and / or config.yaml if present.""")
     exit(1)
 
@@ -106,6 +115,10 @@ Remember that you also need the domainname of the owncloud instance to configure
     for cmd in get_commands():
         print(cmd.format(**data))
     exit(0)
+
+if "--helm-install" in arguments:
+    helm_install = True
+    arguments.remove("--helm-install")
 
 defaults = False
 if "--defaults" in arguments:
@@ -302,4 +315,7 @@ for val in servers:
 with open(values_file, 'w') as yaml_file:
     yaml.dump(values, yaml_file, default_flow_style=False)
 
+if helm_install:
+    execute_helm()
+    
 exit(0)
