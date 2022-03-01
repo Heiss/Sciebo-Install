@@ -33,7 +33,7 @@ def execute_ssh(ssh, cmd):
     _, stdout, stderr = ssh.exec_command(cmd)
     err = stderr.read()
     if err != "":
-        print(f"Error in ssh command: {err}")
+        click.echo(f"Error in ssh command: {err}")
         exit(1)
     return stdout
 
@@ -42,7 +42,7 @@ def execute_kubectl(k8s, cmd):
     k8s.write_stdin(cmd + "\n")
     err = k8s.read_stderr()
     if err != "":
-        print(f"Error in kubectl command: {err}")
+        click.echo(f"Error in kubectl command: {err}")
         exit(1)
     return k8s.read_stdout(timeout=3)
 
@@ -55,7 +55,7 @@ def execute_helm(values_file):
 
 def execute(channel, fun, commands, owncloud_host_hostname_command, owncloud_host_config_command):
     for cmd in commands:
-        print(f"Running command: {cmd}\n")
+        click.echo(f"Running command: {cmd}\n")
         fun(channel, cmd)
 
     # via php hostname
@@ -146,7 +146,7 @@ def install(force_kubectl, helm_install, values_file, file):
                 try:
                     config = yaml.safe_load(f)
                 except yaml.YAMLError as exc:
-                    print(f"Error in config.yaml: {exc}")
+                    click.echo(f"Error in config.yaml: {exc}")
                     exit(1)
         except OSError as exc:
             click.echo(f"Missing file: {config_file}")
@@ -161,14 +161,14 @@ def install(force_kubectl, helm_install, values_file, file):
                 "selector": config["k8sselector"]
             }]
         except KeyError as exc:
-            print("Missing `k8sselector` field in config. --only-kubeconfig needs this field.")
+            click.echo("Missing `k8sselector` field in config. --only-kubeconfig needs this field.")
             exit(1)
-        print("use kubeconfig only")
+        click.echo("use kubeconfig only")
 
     servers = config.get("servers", [])
 
     if len(servers) == 0:
-        print("No servers were found.")
+        click.echo("No servers were found.")
         exit(1)
 
     for val in servers:
@@ -235,10 +235,10 @@ def install(force_kubectl, helm_install, values_file, file):
                     continue
 
             if k8s is None or not k8s.is_open():
-                print(f"No connection via kubectl possible: {val}")
+                click.echo(f"No connection via kubectl possible: {val}")
                 exit(1)
 
-            print(
+            click.echo(
                 f"kubectl initialized: Connected to pod {pod.metadata.name}, container {containername} in namespace {namespace}")
 
             owncloud_url = execute(k8s, execute_kubectl, commands,
@@ -246,12 +246,12 @@ def install(force_kubectl, helm_install, values_file, file):
 
             k8s.close()
         else:
-            print(
+            click.echo(
                 f"Skipped: Server was not valid to work with: {val}\nIt needs to be an object with `address` for ssh or `namespace` for kubectl")
             continue
 
         if not owncloud_url:
-            print(
+            click.echo(
                 f"owncloud domain cannot be found automatically for {val}. Enter the correct domain without protocol. If port needed, add it too.\nExample: sciebords.uni-muenster.de, localhost:8000")
             value = ""
 
