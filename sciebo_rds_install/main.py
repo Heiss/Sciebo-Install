@@ -96,6 +96,8 @@ $OAUTHNAME is not in use for oauth2 already.
 $RDS_DOMAIN points to the sciebo-rds installation root domain.
 
 Remember that you also need the domainname of the owncloud instance to configure the values.yaml, which will be automatically guessed by this script.
+
+ownCloud needs php-gmp for oauth2 plugin. Install it on your own.
 """)
 
     click.echo("Commands: ")
