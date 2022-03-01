@@ -9,8 +9,16 @@ You need python3 and pip to use this tool.
 ```bash
 git clone https://github.com/Heiss/Sciebo-RDS-Install.git && cd Sciebo-RDS-Install
 pip install -r requirements.txt
-chmod +x src/main.py
-sciebo_rds_install /main.py --help
+chmod +x sciebo_rds_install/main.py
+sciebo_rds_install/main.py --help
+```
+
+If you have poetry installed, you can use it. So the installation will not rubbish your local python environment, because it uses virtualenv on its own.
+
+```bash
+git clone https://github.com/Heiss/Sciebo-RDS-Install.git && cd Sciebo-RDS-Install
+poetry install
+poetry run sciebords
 ```
 
 The application will look for a `config.yaml`. But you can also set your config stuff for this tool into the sciebo RDS needed `values.yaml`, so you only have to maintain a single yaml file. Just append the content of `config.yaml` to your `values.yaml`. For options, please take a look into the `config.yaml.example`, because it holds everything with documentation you can configure for this app. Also you should take a look into the help parameter, because it shows, what the tool can do for you.
