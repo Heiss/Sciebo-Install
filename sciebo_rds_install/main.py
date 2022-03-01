@@ -8,7 +8,6 @@ from secrets import choice
 import yaml
 import string
 import os
-import sys
 
 
 def random(N=64):
@@ -47,7 +46,7 @@ def execute_kubectl(k8s, cmd):
         exit(1)
     return k8s.read_stdout(timeout=3)
 
-def execute_helm():
+def execute_helm(values_file):
     os.system("helm uninstall sciebo-rds")
     os.system("helm repo remove sciebo-rds")
     os.system("helm repo add sciebo-rds https://www.research-data-services.org/charts")
@@ -277,7 +276,7 @@ def install(force_kubectl, helm_install, values_file, file):
         yaml.dump(values, yaml_file, default_flow_style=False)
 
     if helm_install:
-        execute_helm()
+        execute_helm(values_file)
 
 
 cli.add_command(commands, "get-commands")
