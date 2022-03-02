@@ -1,4 +1,4 @@
-# Sciebo RDS install
+# Sciebo RDS CLI
 
 This is a helper tool to install sciebo RDS to your owncloud instances. It supports ssh and kubectl.
 
