@@ -6,7 +6,13 @@ This is a helper tool to install sciebo RDS to your owncloud instances. It suppo
 
 ## Usage
 
-You need python3 and pip to use this tool.
+You need python3 (>= 3.10) and pip to use this tool.
+
+```bash
+pip install sciebo-rds-cli
+```
+
+If you prefer the sourcecode way:
 
 ```bash
 git clone https://github.com/Heiss/Sciebo-RDS-Install.git && cd Sciebo-RDS-Install
@@ -15,7 +21,7 @@ chmod +x sciebo_rds_install/main.py
 sciebo_rds_install/main.py --help
 ```
 
-If you have poetry installed, you can use it. So the installation will not rubbish your local python environment, because it uses virtualenv on its own.
+If you have poetry installed, you can use it, too. So the installation will not rubbish your local python environment, because it uses virtualenv on its own.
 
 ```bash
 git clone https://github.com/Heiss/Sciebo-RDS-Install.git && cd Sciebo-RDS-Install
