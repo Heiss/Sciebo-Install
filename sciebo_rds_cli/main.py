@@ -425,6 +425,7 @@ def install(force_kubectl, helm_install, values_file, file, dry_run):
             )
 
             if dry_run:
+                click.echo("SSH can connect to ownCloud server: {}".format(val["address"]))
                 continue
 
             owncloud_url = execute(
@@ -485,6 +486,7 @@ def install(force_kubectl, helm_install, values_file, file, dry_run):
             )
 
             if dry_run:
+                click.echo("kubectl can connect to ownCloud label: {}, container: {}".format(selector, containername))
                 continue
 
             owncloud_url = execute(
