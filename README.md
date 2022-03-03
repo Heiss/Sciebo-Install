@@ -1,3 +1,5 @@
+[![PyPI version](https://badge.fury.io/py/sciebo-rds-cli.svg)](https://badge.fury.io/py/sciebo-rds-cli)
+
 Status: not for production, yet
 
 # Sciebo RDS CLI

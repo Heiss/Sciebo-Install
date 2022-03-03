@@ -22,8 +22,8 @@ def random(N=64):
 
 def get_commands():
     commands = [
-        "{owncloud_path}occ market:install oauth2",
-        "{owncloud_path}occ market:install rds",
+        #"{owncloud_path}occ market:install oauth2",
+        #"{owncloud_path}occ market:install rds",
         "{owncloud_path}occ app:enable oauth2",
         "{owncloud_path}occ app:enable rds",
         "{owncloud_path}occ oauth2:add-client {oauthname} {client_id} {client_secret} {rds_domain}",
@@ -55,7 +55,7 @@ def execute_kubectl(k8s, cmd):
 def execute_helm(values_file, install=False, dry_run=False):
     if install and not dry_run:
         click.echo("Preparing helm for sciebo RDS.")
-        click.echo("Remove installed sciebo rds from k8s if it already there.")
+        click.echo("Remove installed sciebo rds from k8s if it is already there.")
         os.system("helm uninstall sciebo-rds")
         click.echo("Remove sciebo RDS from helm repo list.")
         os.system("helm repo remove sciebo-rds")
@@ -87,7 +87,7 @@ def execute(
     channel, fun, commands, owncloud_host_hostname_command, owncloud_host_config_command
 ):
     for cmd in commands:
-        click.echo(f"Running command: {cmd}\n")
+        click.echo(f"Running command: {cmd}")
         fun(channel, cmd)
 
     # via php hostname
@@ -248,11 +248,16 @@ def checks(single_file):
     default=False,
     help="Execute install without any changes. WARNING: It connects to the ownCloud instances and your k8s cluster via SSH and Kubectl nevertheless, but it does not change anything.",
 )
-def upgrade(dry_run):
+@click.argument(
+    "values_file",
+    default=Path(f"{os.getcwd()}/values.yaml"),
+    type=click.Path(exists=True),
+)
+def upgrade(dry_run, values_file):
     """
     A wrapper method for convenience to upgrade the sciebo RDS instance with helm. Use this command if you changed something in your values.yaml
     """
-    execute_helm(values_file_path, install=False, dry_run=dry_run)
+    execute_helm(values_file, install=False, dry_run=dry_run)
 
 
 @click.command()
@@ -311,7 +316,7 @@ ownCloud needs php-gmp for oauth2 plugin. Install it on your own.
     type=click.Path(exists=True),
     is_flag=False,
     flag_value=Path(f"{os.getcwd()}/config.yaml"),
-    help="The given path will be used as config.yaml file. Use the values.yaml per default otherwise.",
+    help="The given path will be used as config.yaml file. If not given, it will use the values.yaml per default otherwise.",
 )
 @click.argument(
     "values_file",
