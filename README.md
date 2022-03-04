@@ -12,6 +12,7 @@ You need python3 (>= 3.10) and pip to use this tool.
 
 ```bash
 pip install sciebo-rds-cli
+sciebords --help
 ```
 
 If you prefer the sourcecode way:
