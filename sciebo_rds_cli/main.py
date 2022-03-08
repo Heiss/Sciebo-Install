@@ -22,8 +22,8 @@ def random(N=64):
 
 def get_commands():
     commands = [
-        #"{owncloud_path}occ market:install oauth2",
-        #"{owncloud_path}occ market:install rds",
+        # "{owncloud_path}occ market:install oauth2",
+        # "{owncloud_path}occ market:install rds",
         "{owncloud_path}occ app:enable oauth2",
         "{owncloud_path}occ app:enable rds",
         "{owncloud_path}occ oauth2:add-client {oauthname} {client_id} {client_secret} {rds_domain}",
@@ -162,20 +162,30 @@ def init(self_signed, overwrite_values, single_file):
                 err=True,
             )
 
+    cnt = requests.get(
+        "https://raw.githubusercontent.com/Sciebo-RDS/Sciebo-RDS/release/getting-started/values.yaml.example"
+    ).text
+
+    cfg = requests.get(
+        "https://raw.githubusercontent.com/Sciebo-RDS/Sciebo-RDS-CLI/develop/config.yaml.example"
+    ).text
+
+    if (not os.path.isfile(config_file_path) or overwrite_values) and not single_file:
+        if overwrite_values:
+            click.echo(f"WARN: Overwrites {config_file_path} if it exists.")
+
+        with open(config_file_path, "w") as f:
+            f.write(cfg)
+            click.echo(f"{config_file_path} created.")
+
     if not os.path.isfile(values_file_path) or overwrite_values:
         if overwrite_values:
             click.echo(f"WARN: Overwrites {values_file_path} if it exists.")
 
-        cnt = requests.get(
-            "https://raw.githubusercontent.com/Sciebo-RDS/Sciebo-RDS/release/getting-started/values.yaml.example"
-        ).text
         if single_file:
             click.echo(
                 f"WARN: Places {config_file_path} content at the top of {values_file_path}."
             )
-            cfg = requests.get(
-                "https://raw.githubusercontent.com/Sciebo-RDS/Sciebo-RDS-CLI/develop/config.yaml.example"
-            ).text
             cnt = cfg + "\n\n\n" + cnt
 
         with open(values_file_path, "w") as f:
@@ -187,9 +197,14 @@ def init(self_signed, overwrite_values, single_file):
             err=True,
         )
 
-    click.echo(
-        f"Adjust the {values_file_path} to your needs with your favourite editor, before you `install` sciebo RDS."
-    )
+    if not single_file:
+        click.echo(
+            f"Adjust the {values_file_path} and {config_file_path} to your needs with your favourite editor, before you `install` sciebo RDS."
+        )
+    else:
+        click.echo(
+            f"Adjust the {values_file_path} to your needs with your favourite editor, before you `install` sciebo RDS."
+        )
 
 
 @click.command()
@@ -425,7 +440,9 @@ def install(force_kubectl, helm_install, values_file, file, dry_run):
             )
 
             if dry_run:
-                click.echo("SSH can connect to ownCloud server: {}".format(val["address"]))
+                click.echo(
+                    "SSH can connect to ownCloud server: {}".format(val["address"])
+                )
                 continue
 
             owncloud_url = execute(
@@ -486,7 +503,11 @@ def install(force_kubectl, helm_install, values_file, file, dry_run):
             )
 
             if dry_run:
-                click.echo("kubectl can connect to ownCloud label: {}, container: {}".format(selector, containername))
+                click.echo(
+                    "kubectl can connect to ownCloud label: {}, container: {}".format(
+                        selector, containername
+                    )
+                )
                 continue
 
             owncloud_url = execute(
