@@ -261,7 +261,7 @@ def checks(single_file):
     "dry_run",
     is_flag=True,
     default=False,
-    help="Execute install without any changes. WARNING: It connects to the ownCloud instances and your k8s cluster via SSH and Kubectl nevertheless, but it does not change anything.",
+    help="Execute install without any changes. WARNING: It connects to the ownCloud instances and your k8s cluster via SSH and Kubectl to get some informations. Nevertheless it does not change anything.",
 )
 @click.argument(
     "values_file",
@@ -331,7 +331,7 @@ ownCloud needs php-gmp for oauth2 plugin. Install it on your own.
     type=click.Path(exists=True),
     is_flag=False,
     flag_value=Path(f"{os.getcwd()}/config.yaml"),
-    help="The given path will be used as config.yaml file. If not given, it will use the values.yaml per default otherwise.",
+    help="The given path will be used as config.yaml file. If not given, it will use the values.yaml per default as a single-file-configuration otherwise.",
 )
 @click.argument(
     "values_file",
@@ -343,7 +343,7 @@ ownCloud needs php-gmp for oauth2 plugin. Install it on your own.
     "dry_run",
     is_flag=True,
     default=False,
-    help="Execute install without any changes. WARNING: It connects to the ownCloud instances and your k8s cluster via SSH and Kubectl nevertheless, but it does not change anything.",
+   help="Execute install without any changes. WARNING: It connects to the ownCloud instances and your k8s cluster via SSH and Kubectl to get some informations. Nevertheless it does not change anything.",
 )
 def install(force_kubectl, helm_install, values_file, file, dry_run):
     """
