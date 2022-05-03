@@ -216,7 +216,14 @@ def init(self_signed, overwrite_values, single_file):
     default=False,
     help=f"Writes down the needed config stuff in {values_file_path}. Otherwise it creates a separate file {config_file_path}.",
 )
-def checks(single_file):
+@click.option(
+    "--helm-sciebords-name",
+    "-n",
+    "helm_name",
+    default="sciebords",
+    help="Use the given name for helm install process. Defaults to 'sciebords'.",
+)
+def checks(single_file, helm_name):
     """
     Runs several checks if all requirements for sciebo RDS are fulfilled.
     """
@@ -244,7 +251,7 @@ def checks(single_file):
     if (
         os.path.isfile(values_file_path)
         and os.system(
-            f"helm upgrade -i sciebo-rds sciebo-rds/all --values {values_file_path} --dry-run"
+            f"helm upgrade -i {helm_name} sciebo-rds/all --values {values_file_path} --dry-run"
         )
         > 0
     ):
@@ -343,7 +350,7 @@ ownCloud needs php-gmp for oauth2 plugin. Install it on your own.
     "dry_run",
     is_flag=True,
     default=False,
-   help="Execute install without any changes. WARNING: It connects to the ownCloud instances and your k8s cluster via SSH and Kubectl to get some informations. Nevertheless it does not change anything.",
+    help="Execute install without any changes. WARNING: It connects to the ownCloud instances and your k8s cluster via SSH and Kubectl to get some informations. Nevertheless it does not change anything.",
 )
 def install(force_kubectl, helm_install, values_file, file, dry_run):
     """
@@ -454,7 +461,7 @@ def install(force_kubectl, helm_install, values_file, file, dry_run):
             )
 
             ssh.close()
-        elif "selector" in val:
+        elif "namespace" in val:
             context = val.get("context", config.get("k8scontext"))
             selector = val.get("selector", config.get("k8sselector"))
             containername = val.get("containername", config.get("k8scontainername"))
