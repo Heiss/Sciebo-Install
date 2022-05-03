@@ -29,6 +29,7 @@ def get_commands():
         "{owncloud_path}occ oauth2:add-client {oauthname} {client_id} {client_secret} {rds_domain}",
         "{owncloud_path}occ rds:set-oauthname {oauthname}",
         "{owncloud_path}occ rds:set-url {rds_domain}",
+        "{owncloud_path}occ rds:create-keys",
     ]
 
     return commands
