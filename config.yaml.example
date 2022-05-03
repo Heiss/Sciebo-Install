@@ -1,0 +1,26 @@
+rds: "https://your-rds-instance.tld" # mandatory, will be used to set the redirect-url
+# owncloud_path: "/var/www/owncloud" # optional, have to be set, if occ is not available in lookup paths, will be used for all entries in sciebo
+# k8snamespace: "sns-staging" # optional, if you want to use another namespace as configured in kubectl current context
+# k8scontext: "sciebo-ng" # optional, if you want to use another kubectl context
+# k8sselector: "app.kubernetes.io/instance=sns-staging-owncloud" # optional, selector for pods, mandatory, if you want to use --only-kubeconfig
+# k8scontainername: "apache" # optional, if you run multiple containers in a single pod.
+# oauthname: "sciebo-rds" # optional, can be used to change the oauth client name in owncloud, default: sciebo-rds
+
+# k8s needs nothing, if you have specified everything right in the kubeconfig or global. 
+# But this only works for a single namespace. If you are fine with that, use --only-kubeconfig parameter to ignore servers config.
+# You have to specify k8sselector if you want to use this parameter.
+
+# Otherwise use the following struct to define ssh and / or k8s connections
+servers:
+    # ssh
+    - address: "localhost:8080" # mandatory, if you want to use ssh
+      # user: "admin" # optional, if no user / password or private_key was set, ssh agent will be used. Password will be used if needed for agent.
+      # password: "secret" # optional, will be used to decode private_key if private_key is set, otherwise for username
+      # private_key: "$HOME/.ssh/id_rsa" # optional, full path, only $HOME available from envVars
+      # owncloud_path: "/var/www/owncloud" # optional, can be set, if occ is not available in lookup paths, only used for this entry
+    # k8s
+    - namespace: "rds-namespace" # mandatory, if you want to use another namespace as configured in kubectl current context and different as k8snamespace, if there are more then 1 namespace
+      # selector: "app.kubernetes.io/instance=sns-staging-owncloud" # optional, selector have to be unique for the wanted pod / deployment, overwrites k8sselector
+      # context: "sciebo-ng" # optional, if you want to use another kubectl context as the global one
+      # containername: "apache" optional, if you run multiple containers in a single pod, overwrites global k8scontainername
+      
